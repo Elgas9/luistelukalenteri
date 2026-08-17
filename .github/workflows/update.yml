@@ -1,0 +1,33 @@
+name: Update skating schedule
+
+on:
+  schedule:
+    # Every Monday at 05:00 UTC (roughly 07:00-08:00 Finnish time,
+    # depending on daylight saving). GitHub may delay scheduled runs
+    # by a few minutes - that's fine for a weekly schedule like this.
+    - cron: "0 5 * * 1"
+  workflow_dispatch: {} # lets you trigger a run by hand from the Actions tab
+
+permissions:
+  contents: write # needed so the workflow can commit the updated page
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch schedule and rebuild page
+        run: python3 scrape.py
+
+      - name: Commit updated page (if it changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git diff --staged --quiet || git commit -m "Update skating schedule"
+          git push
